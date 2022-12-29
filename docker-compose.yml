@@ -13,3 +13,5 @@ services:
         target: /QuestionnaireBot/logs
     network_mode: "host"
     restart: unless-stopped
+    ports:
+      - "9300:9300"
