@@ -8,17 +8,17 @@ import logging
 from keyboards import TelegramInlineKeyboard, Button
 
 
-logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
+logging.basicConfig(filename="../logs/questionnaire_bot.log", level=logging.INFO)
 using_bot_counter = prometheus_client.Counter(
     "using_bot_count",
     "request to the bot",
     ['method', 'user_id', 'username']
 )
 parser = ConfigParser()
-parser.read(Path('/QuestionnaireBot/config/init_dev.ini').absolute())
+parser.read(Path('../config/init_dev.ini').absolute())
 telegram_api_token = parser['telegram']['telegram_api_token']
 bot = telebot.TeleBot(token=telegram_api_token)
-path: Path = Path(f"/QuestionnaireBot/config/config_dev.yaml").absolute()
+path: Path = Path(f"../config/config_dev.yaml").absolute()
 
 
 def read_config():
@@ -38,6 +38,18 @@ def bot_logging(message):
         f" {message.from_user.id},"
         f" {message.from_user.full_name}"
     )
+
+
+# Функция для генерации отчета из опроса
+def generate_report(inline_keyboard):
+    report = ''
+    inline_keyboard = inline_keyboard[:-1]
+    for item in inline_keyboard:
+        if item[2]['text'] == "Отмена":
+            report += f"{item[0]['text']} -> {item[1]['text']}\n"
+        else:
+            report += f"{item[0]['text']} -> ?\n"
+    return report
 
 
 # Функции по обработке меню типов сервисов
@@ -139,6 +151,7 @@ def services_start_questionnaire(call):
                     Button(f"Ошибки", f"service_{service['ris']}_errors")
                 )
             keyboard.add_buttons(questionnaire_buttons_list, 3)
+            keyboard.add_button(f"Сгенерировать отчет", f"report_generate")
             bot.send_message(
                 chat_id=call.message.chat.id,
                 text=f"{platform['ru_name']}",
@@ -150,7 +163,7 @@ def services_start_questionnaire(call):
 def service_success_or_errors(call, ris_code, new_state):
     current_buttons_list = call.message.reply_markup.to_dict()['inline_keyboard']
     keyboard = TelegramInlineKeyboard()
-    for row_buttons in current_buttons_list:
+    for row_buttons in current_buttons_list[:-1]:
         new_buttons_list = []
         button_in_row = 0
         for button in row_buttons:
@@ -167,13 +180,14 @@ def service_success_or_errors(call, ris_code, new_state):
             else:
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
         keyboard.add_buttons(new_buttons_list, button_in_row)
+    keyboard.add_button(f"Сгенерировать отчет", f"report_generate")
     return keyboard.get_keyboard()
 
 
 def service_cancel_check(call, ris_code):
     current_buttons_list = call.message.reply_markup.to_dict()['inline_keyboard']
     keyboard = TelegramInlineKeyboard()
-    for row_buttons in current_buttons_list:
+    for row_buttons in current_buttons_list[:-1]:
         new_buttons_list = []
         button_in_row = 0
         for button in row_buttons:
@@ -190,6 +204,7 @@ def service_cancel_check(call, ris_code):
             else:
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
         keyboard.add_buttons(new_buttons_list, button_in_row)
+    keyboard.add_button(f"Сгенерировать отчет", f"report_generate")
     return keyboard.get_keyboard()
 
 
@@ -246,6 +261,7 @@ def users_start_questionnaire(call):
                     Button(f"Ошибки", f"user_{user['id']}_errors")
                 )
             keyboard.add_buttons(questionnaire_buttons_list, 3)
+            keyboard.add_button(f"Сгенерировать отчет", f"report_generate")
             bot.send_message(
                 chat_id=call.message.chat.id,
                 text=f"{platform['ru_name']}",
@@ -257,7 +273,7 @@ def users_start_questionnaire(call):
 def user_success_or_errors(call, user_id, new_state):
     current_buttons_list = call.message.reply_markup.to_dict()['inline_keyboard']
     keyboard = TelegramInlineKeyboard()
-    for row_buttons in current_buttons_list:
+    for row_buttons in current_buttons_list[:-1]:
         new_buttons_list = []
         button_in_row = 0
         for button in row_buttons:
@@ -274,13 +290,14 @@ def user_success_or_errors(call, user_id, new_state):
             else:
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
         keyboard.add_buttons(new_buttons_list, button_in_row)
+    keyboard.add_button(f"Сгенерировать отчет", f"report_generate")
     return keyboard.get_keyboard()
 
 
 def user_cancel_check(call, user_id):
     current_buttons_list = call.message.reply_markup.to_dict()['inline_keyboard']
     keyboard = TelegramInlineKeyboard()
-    for row_buttons in current_buttons_list:
+    for row_buttons in current_buttons_list[:-1]:
         new_buttons_list = []
         button_in_row = 0
         for button in row_buttons:
@@ -297,6 +314,7 @@ def user_cancel_check(call, user_id):
             else:
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
         keyboard.add_buttons(new_buttons_list, button_in_row)
+    keyboard.add_button(f"Сгенерировать отчет", f"report_generate")
     return keyboard.get_keyboard()
 
 
@@ -518,6 +536,17 @@ def query_handler(call):
             chat_id=call.message.chat.id,
             text=f"{responsible_list}"
         )
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('report'))
+def query_handler(call):
+    bot.answer_callback_query(callback_query_id=call.id, text='Генерация отчета')
+    report_message = generate_report(call.message.json['reply_markup']['inline_keyboard'])
+    bot.edit_message_text(
+        text=report_message,
+        chat_id=call.message.chat.id,
+        message_id=call.message.id,
+    )
 
 
 if __name__ == '__main__':
