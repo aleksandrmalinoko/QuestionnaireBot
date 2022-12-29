@@ -3,13 +3,17 @@ import datetime
 import telebot
 from configparser import ConfigParser
 import yaml
-from prometheus_client import Counter
+import prometheus_client
 import logging
 from keyboards import TelegramInlineKeyboard, Button
 
 
 logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
-using_bot_counter = Counter("using_bot_count", "request to the bot", ['method', 'user_id', 'username'])
+using_bot_counter = prometheus_client.Counter(
+    "using_bot_count",
+    "request to the bot",
+    ['method', 'user_id', 'username']
+)
 parser = ConfigParser()
 parser.read(Path('/QuestionnaireBot/config/init_dev.ini').absolute())
 telegram_api_token = parser['telegram']['telegram_api_token']
@@ -517,4 +521,5 @@ def query_handler(call):
 
 
 if __name__ == '__main__':
+    prometheus_client.start_http_server(9300)
     bot.infinity_polling()
