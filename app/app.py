@@ -336,6 +336,36 @@ def user_call(user_id):
     return admin_id
 
 
+def get_os_users():
+    users = []
+    platform_config = read_config()['platform']
+    for platform in platform_config:
+        if platform['en_name'] == 'OS':
+            for user in platform['users']:
+                users.append(user['name'])
+    return users
+
+
+@bot.message_handler(commands=['os_users'])
+def status_message(message):
+    users_list = get_os_users()
+    while len(users_list) >= 10:
+        users_slice = users_list[:9]
+        users_list = users_list[9:]
+        bot.send_poll(
+            message.chat.id,
+            question="Опрос",
+            options=users_slice,
+            is_anonymous=False,
+        )
+    bot.send_poll(
+        message.chat.id,
+        question="Опрос",
+        options=users_list,
+        is_anonymous=False,
+    )
+
+
 # Команды боту
 @bot.message_handler(commands=['services'])
 def status_message(message):
