@@ -26,6 +26,7 @@ opt.add_experimental_option("prefs", {
     "profile.default_content_setting_values.notifications": 1
 })
 logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
+# logging.basicConfig(filename="../logs/questionnaire_bot.log", level=logging.INFO)
 using_bot_counter = prometheus_client.Counter(
     "using_bot_count",
     "request to the bot",
@@ -33,9 +34,11 @@ using_bot_counter = prometheus_client.Counter(
 )
 parser = ConfigParser()
 parser.read(Path('/QuestionnaireBot/config/init_dev.ini').absolute())
+# parser.read(Path('../config/init_dev.ini').absolute())
 telegram_api_token = parser['telegram']['telegram_api_token']
 bot = telebot.TeleBot(token=telegram_api_token)
 path: Path = Path(f"/QuestionnaireBot/config/config_dev.yaml").absolute()
+# path: Path = Path(f"../config/config_dev.yaml").absolute()
 
 
 def read_config():
@@ -464,12 +467,14 @@ def status_message(message):
     while len(users_list) >= 10:
         users_slice = users_list[:9]
         users_list = users_list[9:]
+        users_slice.append('Посмотреть результат')
         bot.send_poll(
             message.chat.id,
             question="Опрос",
             options=users_slice,
             is_anonymous=False,
         )
+    users_list.append('Посмотреть результат')
     bot.send_poll(
         message.chat.id,
         question="Опрос",
