@@ -5,9 +5,26 @@ from configparser import ConfigParser
 import yaml
 import prometheus_client
 import logging
+import time
 from keyboards import TelegramInlineKeyboard, Button
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 
-
+opt = Options()
+opt.add_argument("--disable-infobars")
+opt.add_argument("start-maximized")
+opt.add_argument("--disable-extensions")
+# Pass the argument 1 to allow and 2 to block
+opt.add_experimental_option("prefs", {
+    "profile.default_content_setting_values.media_stream_mic": 1,
+    "profile.default_content_setting_values.media_stream_camera": 1,
+    "profile.default_content_setting_values.geolocation": 1,
+    "profile.default_content_setting_values.notifications": 1
+})
 logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 using_bot_counter = prometheus_client.Counter(
     "using_bot_count",
@@ -38,6 +55,23 @@ def bot_logging(message):
         f" {message.from_user.id},"
         f" {message.from_user.full_name}"
     )
+
+
+def check_first_second_name(dion_names, config_names):
+    admins_not_in_dion = []
+    for config_admin in config_names:
+        for dion_admin in dion_names:
+            if config_admin['first_name'] == dion_admin['first_name']:
+                if config_admin['second_name'] == dion_admin['second_name']:
+                    dion_names.remove(dion_admin)
+                    break
+            elif config_admin['first_name'] == dion_admin['second_name']:
+                if config_admin['second_name'] == dion_admin['first_name']:
+                    dion_names.remove(dion_admin)
+                    break
+        else:
+            admins_not_in_dion.append(config_admin)
+    return admins_not_in_dion, dion_names
 
 
 # Функция для генерации отчета из опроса
@@ -344,6 +378,84 @@ def get_os_users():
             for user in platform['users']:
                 users.append(user['name'])
     return users
+
+
+@bot.message_handler(commands=['who_is_in_the_conference'])
+def initial_message(message):
+    bot.send_message(
+        message.chat.id,
+        "Введите адрес конференции",
+    )
+    bot.register_next_step_handler(message, check_dion_room)
+
+
+def check_dion_room(message):
+    browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=opt)
+    browser.get(f'https://dion.vc/event/{message.text}')
+    elem = browser.find_element(By.ID, 'name')
+    elem.send_keys('OSCheckBot' + Keys.RETURN)
+    while True:
+        try:
+            connect_btn = browser.find_element(By.CSS_SELECTOR, "#connect-to-call")
+            break
+        except:
+            time.sleep(1)
+    connect_btn.click()
+    while True:
+        try:
+            users_btn = browser.find_element(By.CSS_SELECTOR, "#open-speakers-list-button")
+            break
+        except:
+            time.sleep(1)
+    users_btn.click()
+    user_list = browser.find_element(By.CSS_SELECTOR,
+                                     "#root > div.sc-ftvSup.gygqun > div > div.css-m7mn9r > "
+                                     "div > div > div.MuiDrawer-root.MuiDrawer-docked.css-uje53d > "
+                                     "div > div.css-19tbzjb > div > div > ul"
+                                     )
+    user_list = user_list.find_elements(By.XPATH, "./li")
+    dion_users = []
+    for user in user_list:
+        name = user.find_elements(By.XPATH, "./div[2]/div[1]/div")
+        try:
+            firstname, second_name = name[0].text.split(" ")
+            dion_users.append({'first_name': firstname, 'second_name': second_name})
+        except:
+            dion_users.append({'first_name': name[0].text, 'second_name': ""})
+
+    platform_config = read_config()['platform']
+    full_config_users = []
+    for platform in platform_config:
+        if platform['en_name'] == "OS":
+            full_config_users = platform['users']
+            break
+    else:
+        print("Конфигурационный файл не обнаружен")
+        exit(-1)
+    config_users = []
+    for user in full_config_users:
+        try:
+            firstname, second_name = user['name'].split(" ")
+            config_users.append(
+                {'first_name': firstname, 'second_name': second_name, 'telegram_id': user['telegram_username']})
+        except:
+            config_users.append(
+                {'first_name': user['name'], 'second_name': "", 'telegram_id': user['telegram_username']})
+    admins_not_in_dion, unknown_admins = check_first_second_name(dion_names=dion_users, config_names=config_users)
+    answer_message = ""
+    answer_message += "Отсутствуют:\n"
+    for elem in admins_not_in_dion:
+        answer_message += f"{elem['first_name']} {elem['second_name']} {elem['telegram_id']}\n"
+    if len(unknown_admins) != 1:
+        answer_message += "\nНеизвестные участники:\n"
+        for elem in unknown_admins:
+            if elem['first_name'] != 'Oscheckbot':
+                answer_message += f"{elem['first_name']} {elem['second_name']}\n"
+    browser.close()
+    bot.send_message(
+        message.chat.id,
+        answer_message,
+    )
 
 
 @bot.message_handler(commands=['os_users'])
