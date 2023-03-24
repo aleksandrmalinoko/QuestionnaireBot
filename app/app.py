@@ -27,7 +27,7 @@ opt.add_experimental_option("prefs", {
     "profile.default_content_setting_values.notifications": 1
 })
 # logging.basicConfig(filename="../../QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
-logging.basicConfig(filename="../logs/questionnaire_bot.log", level=logging.INFO)
+logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 using_bot_counter = prometheus_client.Counter(
     "using_bot_count",
     "request to the bot",
@@ -35,11 +35,11 @@ using_bot_counter = prometheus_client.Counter(
 )
 parser = ConfigParser()
 # parser.read(Path('../../QuestionnaireBot/config/init_dev.ini').absolute())
-parser.read(Path('../config/init_dev.ini').absolute())
+parser.read(Path('/home/ubuntu/bots_config/questionnaire_bot/config/init_dev.ini').absolute())
 telegram_api_token = parser['telegram']['telegram_api_token']
 bot = telebot.TeleBot(token=telegram_api_token)
 # path: Path = Path(f"../../QuestionnaireBot/config/config_dev.yaml").absolute()
-path: Path = Path(f"../config/config_dev.yaml").absolute()
+path: Path = Path(f"/home/ubuntu/bots_config/questionnaire_bot/config/config_dev.yaml").absolute()
 
 
 def read_config():
