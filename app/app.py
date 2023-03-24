@@ -14,18 +14,10 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
-opt = Options()
-opt.add_argument("--disable-infobars")
-opt.add_argument("start-maximized")
-opt.add_argument("--disable-extensions")
-# opt.add_argument("headless")
-# Pass the argument 1 to allow and 2 to block
-opt.add_experimental_option("prefs", {
-    "profile.default_content_setting_values.media_stream_mic": 1,
-    "profile.default_content_setting_values.media_stream_camera": 1,
-    "profile.default_content_setting_values.geolocation": 1,
-    "profile.default_content_setting_values.notifications": 1
-})
+
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--headless')
 # logging.basicConfig(filename="../../QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 using_bot_counter = prometheus_client.Counter(
@@ -395,7 +387,7 @@ def initial_message(message):
 
 
 def check_dion_room(message):
-    browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=opt)
+    browser = webdriver.Chrome(options=chrome_options)
     browser.get(f'https://dion.vc/event/{message.text}')
     while True:
         try:
