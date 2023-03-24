@@ -35,11 +35,11 @@ using_bot_counter = prometheus_client.Counter(
 )
 parser = ConfigParser()
 # parser.read(Path('../../QuestionnaireBot/config/init_dev.ini').absolute())
-parser.read(Path('/home/ubuntu/bots_config/questionnaire_bot/config/init_dev.ini').absolute())
+parser.read(Path('/QuestionnaireBot/config/init_dev.ini').absolute())
 telegram_api_token = parser['telegram']['telegram_api_token']
 bot = telebot.TeleBot(token=telegram_api_token)
 # path: Path = Path(f"../../QuestionnaireBot/config/config_dev.yaml").absolute()
-path: Path = Path(f"/home/ubuntu/bots_config/questionnaire_bot/config/config_dev.yaml").absolute()
+path: Path = Path(f"/QuestionnaireBot/config/config_dev.yaml").absolute()
 
 
 def read_config():
