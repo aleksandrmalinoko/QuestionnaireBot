@@ -393,7 +393,8 @@ def initial_message(message):
 
 
 def check_dion_room(message):
-    browser = webdriver.Chrome('/Users/aleksandrmalinko/Chromedriver/chromedriver_mac_arm64/chromedriver', options=chrome_options)
+    # browser = webdriver.Chrome('/Users/aleksandrmalinko/Chromedriver/chromedriver_mac_arm64/chromedriver', options=chrome_options)
+    browser = webdriver.Chrome(options=chrome_options)
     browser.get(f'https://dion.vc/event/{message.text}')
     while True:
         try:
