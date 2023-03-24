@@ -17,7 +17,13 @@ from selenium.webdriver.chrome.service import Service
 
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--no-sandbox')
-chrome_options.add_argument('--headless')
+# chrome_options.add_argument('--headless')
+chrome_options.add_experimental_option("prefs", {
+    "profile.default_content_setting_values.media_stream_mic": 1,
+    "profile.default_content_setting_values.media_stream_camera": 1,
+    "profile.default_content_setting_values.geolocation": 1,
+    "profile.default_content_setting_values.notifications": 1
+})
 # logging.basicConfig(filename="../../QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 using_bot_counter = prometheus_client.Counter(
@@ -46,12 +52,12 @@ def bot_monitoring(message):
 
 def bot_logging(message):
     pass
-    # logging.info(
-    #     f"{datetime.datetime.now().strftime('%d-%m-%Y %H:%M')}. "
-    #     f"{message.text},"
-    #     f" {message.from_user.id},"
-    #     f" {message.from_user.full_name}"
-    # )
+    logging.info(
+        f"{datetime.datetime.now().strftime('%d-%m-%Y %H:%M')}. "
+        f"{message.text},"
+        f" {message.from_user.id},"
+        f" {message.from_user.full_name}"
+    )
 
 
 def check_first_second_name(dion_names, config_names):
@@ -387,7 +393,7 @@ def initial_message(message):
 
 
 def check_dion_room(message):
-    browser = webdriver.Chrome(options=chrome_options)
+    browser = webdriver.Chrome('/Users/aleksandrmalinko/Chromedriver/chromedriver_mac_arm64/chromedriver', options=chrome_options)
     browser.get(f'https://dion.vc/event/{message.text}')
     while True:
         try:
