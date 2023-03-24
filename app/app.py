@@ -18,6 +18,7 @@ opt = Options()
 opt.add_argument("--disable-infobars")
 opt.add_argument("start-maximized")
 opt.add_argument("--disable-extensions")
+# opt.add_argument("headless")
 # Pass the argument 1 to allow and 2 to block
 opt.add_experimental_option("prefs", {
     "profile.default_content_setting_values.media_stream_mic": 1,
@@ -25,20 +26,20 @@ opt.add_experimental_option("prefs", {
     "profile.default_content_setting_values.geolocation": 1,
     "profile.default_content_setting_values.notifications": 1
 })
-logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
-# logging.basicConfig(filename="../logs/questionnaire_bot.log", level=logging.INFO)
+# logging.basicConfig(filename="../../QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
+logging.basicConfig(filename="../logs/questionnaire_bot.log", level=logging.INFO)
 using_bot_counter = prometheus_client.Counter(
     "using_bot_count",
     "request to the bot",
     ['method', 'user_id', 'username']
 )
 parser = ConfigParser()
-parser.read(Path('/QuestionnaireBot/config/init_dev.ini').absolute())
-# parser.read(Path('../config/init_dev.ini').absolute())
+# parser.read(Path('../../QuestionnaireBot/config/init_dev.ini').absolute())
+parser.read(Path('../config/init_dev.ini').absolute())
 telegram_api_token = parser['telegram']['telegram_api_token']
 bot = telebot.TeleBot(token=telegram_api_token)
-path: Path = Path(f"/QuestionnaireBot/config/config_dev.yaml").absolute()
-# path: Path = Path(f"../config/config_dev.yaml").absolute()
+# path: Path = Path(f"../../QuestionnaireBot/config/config_dev.yaml").absolute()
+path: Path = Path(f"../config/config_dev.yaml").absolute()
 
 
 def read_config():
@@ -52,12 +53,13 @@ def bot_monitoring(message):
 
 
 def bot_logging(message):
-    logging.info(
-        f"{datetime.datetime.now().strftime('%d-%m-%Y %H:%M')}. "
-        f"{message.text},"
-        f" {message.from_user.id},"
-        f" {message.from_user.full_name}"
-    )
+    pass
+    # logging.info(
+    #     f"{datetime.datetime.now().strftime('%d-%m-%Y %H:%M')}. "
+    #     f"{message.text},"
+    #     f" {message.from_user.id},"
+    #     f" {message.from_user.full_name}"
+    # )
 
 
 def check_first_second_name(dion_names, config_names):
@@ -395,7 +397,13 @@ def initial_message(message):
 def check_dion_room(message):
     browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=opt)
     browser.get(f'https://dion.vc/event/{message.text}')
-    elem = browser.find_element(By.ID, 'name')
+    while True:
+        try:
+            elem = browser.find_element(By.ID, 'name')
+            break
+        except:
+            print("name не найден")
+            time.sleep(1)
     elem.send_keys('OSCheckBot' + Keys.RETURN)
     while True:
         try:
@@ -407,21 +415,22 @@ def check_dion_room(message):
     while True:
         try:
             users_btn = browser.find_element(By.CSS_SELECTOR, "#open-speakers-list-button")
+
             break
         except:
             time.sleep(1)
     users_btn.click()
-    user_list = browser.find_element(By.CSS_SELECTOR,
-                                     "#root > div.sc-ftvSup.gygqun > div > div.css-m7mn9r > "
-                                     "div > div > div.MuiDrawer-root.MuiDrawer-docked.css-uje53d > "
-                                     "div > div.css-19tbzjb > div > div > ul"
+    user_list = browser.find_elements(By.CSS_SELECTOR,
+                                     "root > div.sc-iqcoie.jzLhJm > div > div.css-m7mn9r > div > div > div.MuiDrawer-root.MuiDrawer-docked.css-uje53d > div > div.css-19tbzjb > div > div > ul"
                                      )
-    user_list = user_list.find_elements(By.XPATH, "./li")
+    # user_list = user_list.find_elements(By.XPATH, "./li")
     dion_users = []
     for user in user_list:
         name = user.find_elements(By.XPATH, "./div[2]/div[1]/div")
         try:
-            firstname, second_name = name[0].text.split(" ")
+            # firstname, second_name = name[0].text.split(" ", 2)
+            firstname = name[0].text.split(' ')[0].replace('ё', 'е')
+            second_name = name[0].text.split(' ')[1].replace('ё', 'е')
             dion_users.append({'first_name': firstname, 'second_name': second_name})
         except:
             dion_users.append({'first_name': name[0].text, 'second_name': ""})
@@ -437,15 +446,16 @@ def check_dion_room(message):
         exit(-1)
     config_users = []
     for user in full_config_users:
+        fullname = user['name'].replace('ё', 'е')
         try:
-            firstname, second_name = user['name'].split(" ")
+            firstname, second_name = fullname.split(" ")
             config_users.append(
                 {'first_name': firstname, 'second_name': second_name, 'telegram_id': user['telegram_username']})
         except:
             config_users.append(
-                {'first_name': user['name'], 'second_name': "", 'telegram_id': user['telegram_username']})
+                {'first_name': fullname, 'second_name': "", 'telegram_id': user['telegram_username']})
     admins_not_in_dion, unknown_admins = check_first_second_name(dion_names=dion_users, config_names=config_users)
-    answer_message = ""
+    answer_message = f'https://dion.vc/event/{message.text}\n'
     answer_message += "Отсутствуют:\n"
     for elem in admins_not_in_dion:
         answer_message += f"{elem['first_name']} {elem['second_name']} {elem['telegram_id']}\n"
