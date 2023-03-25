@@ -14,30 +14,33 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
-
+is_dev = 1
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--no-sandbox')
 # chrome_options.add_argument('--headless')
-chrome_options.add_experimental_option("prefs", {
-    "profile.default_content_setting_values.media_stream_mic": 1,
-    "profile.default_content_setting_values.media_stream_camera": 1,
-    "profile.default_content_setting_values.geolocation": 1,
-    "profile.default_content_setting_values.notifications": 1
-})
-# logging.basicConfig(filename="../../QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
-logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
+chrome_options.add_argument('--use-fake-ui-for-media-stream')
+chrome_options.add_argument('--use-fake-device-for-media-stream')
+chrome_options.add_argument('--disable-notification')
+if is_dev:
+    logging.basicConfig(filename="../../QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
+else:
+    logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 using_bot_counter = prometheus_client.Counter(
     "using_bot_count",
     "request to the bot",
     ['method', 'user_id', 'username']
 )
 parser = ConfigParser()
-# parser.read(Path('../../QuestionnaireBot/config/init_dev.ini').absolute())
-parser.read(Path('/QuestionnaireBot/config/init_dev.ini').absolute())
+if is_dev:
+    parser.read(Path('../../QuestionnaireBot/config/init_dev.ini').absolute())
+else:
+    parser.read(Path('/QuestionnaireBot/config/init_dev.ini').absolute())
 telegram_api_token = parser['telegram']['telegram_api_token']
 bot = telebot.TeleBot(token=telegram_api_token)
-# path: Path = Path(f"../../QuestionnaireBot/config/config_dev.yaml").absolute()
-path: Path = Path(f"/QuestionnaireBot/config/config_dev.yaml").absolute()
+if is_dev:
+    path: Path = Path(f"../../QuestionnaireBot/config/config_dev.yaml").absolute()
+else:
+    path: Path = Path(f"/QuestionnaireBot/config/config_dev.yaml").absolute()
 
 
 def read_config():
@@ -393,8 +396,10 @@ def initial_message(message):
 
 
 def check_dion_room(message):
-    # browser = webdriver.Chrome('/Users/aleksandrmalinko/Chromedriver/chromedriver_mac_arm64/chromedriver', options=chrome_options)
-    browser = webdriver.Chrome(options=chrome_options)
+    if is_dev:
+        browser = webdriver.Chrome('/Users/aleksandrmalinko/Chromedriver/chromedriver_mac_arm64/chromedriver', options=chrome_options)
+    else:
+        browser = webdriver.Chrome(options=chrome_options)
     browser.get(f'https://dion.vc/event/{message.text}')
     while True:
         try:
