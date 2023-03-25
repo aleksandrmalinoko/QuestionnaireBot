@@ -14,7 +14,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
-is_dev = 1
+is_dev = 0
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--no-sandbox')
 # chrome_options.add_argument('--headless')
