@@ -24,6 +24,8 @@ chrome_options.add_argument('--use-fake-device-for-media-stream')
 chrome_options.add_argument('--disable-notification')
 if not is_dev:
     chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-extensions')
 if is_dev:
     logging.basicConfig(filename="../../QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 else:
