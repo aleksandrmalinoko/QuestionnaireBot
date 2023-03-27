@@ -405,7 +405,12 @@ def check_dion_room(message):
         browser = webdriver.Chrome('/Users/aleksandrmalinko/Chromedriver/chromedriver_mac_arm64/chromedriver', options=chrome_options)
     else:
         browser = webdriver.Chrome(options=chrome_options)
-    browser.get(f'https://dion.vc/event/{message.text}')
+    for i in range(1,5):
+        try:
+            browser.get(f'https://dion.vc/event/{message.text}')
+            break
+        except:
+            print(f"{i} try")
     while True:
         try:
             elem = browser.find_element(By.ID, 'name')
