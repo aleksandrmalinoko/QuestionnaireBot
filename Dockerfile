@@ -10,6 +10,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Установка зависимостей Python
 COPY requirements.txt .
+RUN apt-get -y update
+RUN apt-get install -y chromium chromium-driver
+
 RUN pip install -r requirements.txt
 
 FROM raspberry-pi-chromium-webdriver
