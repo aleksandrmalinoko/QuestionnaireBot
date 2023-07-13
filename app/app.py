@@ -8,16 +8,17 @@ import logging
 import time
 from keyboards import TelegramInlineKeyboard, Button
 from selenium import webdriver
+import argparse
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
-is_dev = 1
+is_dev = 0
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--no-sandbox')
-chrome_options.add_argument('--headless')
+# chrome_options.add_argument('--headless')
 chrome_options.add_argument('--window-size=1920,1080')
 chrome_options.add_argument('--use-fake-ui-for-media-stream')
 chrome_options.add_argument('--use-fake-device-for-media-stream')
@@ -26,7 +27,22 @@ if not is_dev:
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--disable-extensions')
-if is_dev:
+
+# --------------------------------
+parser = argparse.ArgumentParser(description="You can run this script locally, using flag --devmode or -d",
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("-d", "--devmode", action="store_true", help="Developer mode")
+parser.add_argument("-m", "--macmode", action="store_true", help="Developer mode macos")
+args = parser.parse_args()
+config = vars(args)
+
+
+devmode = config['devmode']
+macmode = config['macmode']
+if devmode:
+    logging.basicConfig(filename="C:\\Users\\amalinko\\PycharmProjects\\QuestionnaireBot\\logs\\questionnaire_bot.log",
+                        level=logging.INFO)
+elif macmode:
     logging.basicConfig(filename="../../QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 else:
     logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
@@ -35,21 +51,28 @@ using_bot_counter = prometheus_client.Counter(
     "request to the bot",
     ['method', 'user_id', 'username']
 )
+
 parser = ConfigParser()
-if is_dev:
-    parser.read(Path('../../QuestionnaireBot/config/init_dev.ini').absolute())
+if devmode:
+    parser.read(Path('C:\\Users\\amalinko\\PycharmProjects\\QuestionnaireBot\\config\\init.ini').absolute())
+elif macmode:
+    parser.read(Path('../../QuestionnaireBot/config/init.ini').absolute())
 else:
-    parser.read(Path('/QuestionnaireBot/config/init_dev.ini').absolute())
+    parser.read(Path('/QuestionnaireBot/config/init.ini').absolute())
 telegram_api_token = parser['telegram']['telegram_api_token']
 bot = telebot.TeleBot(token=telegram_api_token)
-if is_dev:
-    path: Path = Path(f"../../QuestionnaireBot/config/config_dev.yaml").absolute()
+
+if devmode:
+    path: Path = Path(f"C:\\Users\\amalinko\\PycharmProjects\\QuestionnaireBot\\config\\config.yaml").absolute()
+elif macmode:
+    path: Path = Path(f"../../QuestionnaireBot/config/config.yaml").absolute()
 else:
-    path: Path = Path(f"/QuestionnaireBot/config/config_dev.yaml").absolute()
+    path: Path = Path(f"/QuestionnaireBot/config/config.yaml").absolute()
+# --------------------------------
 
 
 def read_config():
-    with open(path, 'r') as stream:
+    with open(path, 'r', encoding='utf-8') as stream:
         config = yaml.safe_load(stream)
     return config
 
@@ -391,6 +414,16 @@ def get_os_users():
     return users
 
 
+def get_os_usernames():
+    users = []
+    platform_config = read_config()['platform']
+    for platform in platform_config:
+        if platform['en_name'] == 'OS':
+            for user in platform['users']:
+                users.append(user['telegram_username'])
+    return users
+
+
 # @bot.message_handler(commands=['who_is_in_the_conference'])
 # def initial_message(message):
 #     bot.send_message(
@@ -516,6 +549,15 @@ def status_message(message):
         question="Опрос",
         options=users_list,
         is_anonymous=False,
+    )
+
+
+@bot.message_handler(commands=['os_all'])
+def status_message(message):
+    users_list = get_os_usernames()
+    bot.send_message(
+        message.chat.id,
+        f"ALL ping\n{users_list}",
     )
 
 
