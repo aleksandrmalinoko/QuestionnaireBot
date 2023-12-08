@@ -130,8 +130,8 @@ def services_change_state(call, users_or_services):
     """
     buttons_list = call.message.reply_markup.to_dict()['inline_keyboard']
     keyboard = TelegramInlineKeyboard()
-    _, changed_service_type, old_state = call.data.split("_")
-    keyboard.add_button("Все", f"{users_or_services}_all")
+    _, changed_service_type, old_state = call.data.split("~")
+    keyboard.add_button("Все", f"{users_or_services}~all")
     buttons_services_list = []
     for buttons_line in buttons_list[1:-1]:
         for button in buttons_line:
@@ -145,10 +145,10 @@ def services_change_state(call, users_or_services):
                 else:
                     new_text = f"{button['text']} ✅"
                     new_state = 'true'
-                callback = f"{users_or_services}_{changed_service_type}_{new_state}"
+                callback = f"{users_or_services}~{changed_service_type}~{new_state}"
             buttons_services_list.append(Button(f"{new_text}", f"{callback}"))
     keyboard.add_buttons(buttons_services_list, 2)
-    keyboard.add_button("Готово", f"{users_or_services}_start")
+    keyboard.add_button("Готово", f"{users_or_services}~start")
     current_list_services = call.message.text.split(":\n")
     changed_service_ru_name = "Неизвестно"
     service_types = read_config()['platform']
@@ -167,20 +167,20 @@ def services_change_state(call, users_or_services):
 def services_all_chosen(call, users_or_services):
     buttons_list = call.message.reply_markup.to_dict()['inline_keyboard']
     keyboard = TelegramInlineKeyboard()
-    keyboard.add_button("Все", f"{users_or_services}_all")
+    keyboard.add_button("Все", f"{users_or_services}~all")
     buttons_services_list = []
     for buttons_line in buttons_list[1:-1]:
         for button in buttons_line:
-            _, service_name, old_state = button['callback_data'].split("_")
+            _, service_name, old_state = button['callback_data'].split("~")
             if old_state == "false":
                 new_text = f"{button['text']} ✅"
             else:
                 new_text = button['text']
             new_state = 'true'
-            callback = f"{users_or_services}_{service_name}_{new_state}"
+            callback = f"{users_or_services}~{service_name}~{new_state}"
             buttons_services_list.append(Button(f"{new_text}", f"{callback}"))
     keyboard.add_buttons(buttons_services_list, 2)
-    keyboard.add_button("Готово", f"{users_or_services}_start")
+    keyboard.add_button("Готово", f"{users_or_services}~start")
     current_list_services = call.message.text.split(":\n")
     new_message_text = f"{current_list_services[0]}:"
     service_types = read_config()['platform']
@@ -200,23 +200,23 @@ def services_start_questionnaire(call):
     for buttons_line in buttons_list[1:-1]:
         for button in buttons_line:
             if button['callback_data'].endswith("true"):
-                _, changed_service_type, _ = button['callback_data'].split("_")
+                _, changed_service_type, _ = button['callback_data'].split("~")
                 services_type_list.append(changed_service_type)
     platform_config = read_config()['platform']
     for platform in platform_config:
         keyboard = TelegramInlineKeyboard()
         if platform['en_name'] in services_type_list:
             questionnaire_buttons_list = []
-            # keyboard.add_button(f"{platform['ru_name']}", f"global_{platform['en_name']}_clicked")
+            # keyboard.add_button(f"{platform['ru_name']}", f"global~{platform['en_name']}~clicked")
             for service in platform['services']:
                 questionnaire_buttons_list.append(
-                    Button(f"{service['ris']} {service['mnemo']}", f"service_{service['ris']}_clicked")
+                    Button(f"{service['ris']} {service['mnemo']}", f"service~{service['ris']}~clicked")
                 )
                 questionnaire_buttons_list.append(
-                    Button(f"Успешно", f"service_{service['ris']}_success")
+                    Button(f"Успешно", f"service~{service['ris']}~success")
                 )
                 questionnaire_buttons_list.append(
-                    Button(f"Ошибки", f"service_{service['ris']}_errors")
+                    Button(f"Ошибки", f"service~{service['ris']}~errors")
                 )
             keyboard.add_buttons(questionnaire_buttons_list, 3)
             keyboard.add_button(f"Сгенерировать отчет", f"report_generate")
@@ -236,14 +236,14 @@ def service_success_or_errors(call, ris_code, new_state):
         button_in_row = 0
         for button in row_buttons:
             button_in_row += 1
-            action_type, button_ris, button_action = button['callback_data'].split("_")
+            action_type, button_ris, button_action = button['callback_data'].split("~")
             if ris_code == button_ris:
                 if button_action == "success":
                     button['text'] = new_state
-                    button['callback_data'] = f"{action_type}_{button_ris}_checked"
+                    button['callback_data'] = f"{action_type}~{button_ris}~checked"
                 elif button_action == "errors":
                     button['text'] = "Отмена"
-                    button['callback_data'] = f"{action_type}_{button_ris}_cancel"
+                    button['callback_data'] = f"{action_type}~{button_ris}~cancel"
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
             else:
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
@@ -260,14 +260,14 @@ def service_cancel_check(call, ris_code):
         button_in_row = 0
         for button in row_buttons:
             button_in_row += 1
-            action_type, button_ris, button_action = button['callback_data'].split("_")
+            action_type, button_ris, button_action = button['callback_data'].split("~")
             if ris_code == button_ris:
                 if button_action == "checked":
                     button['text'] = "Успешно"
-                    button['callback_data'] = f"{action_type}_{button_ris}_success"
+                    button['callback_data'] = f"{action_type}~{button_ris}~success"
                 elif button_action == "cancel":
                     button['text'] = "Ошибки"
-                    button['callback_data'] = f"{action_type}_{button_ris}_errors"
+                    button['callback_data'] = f"{action_type}~{button_ris}~errors"
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
             else:
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
@@ -310,23 +310,23 @@ def users_start_questionnaire(call):
     for buttons_line in buttons_list[1:-1]:
         for button in buttons_line:
             if button['callback_data'].endswith("true"):
-                _, changed_service_type, _ = button['callback_data'].split("_")
+                _, changed_service_type, _ = button['callback_data'].split("~")
                 services_type_list.append(changed_service_type)
     platform_config = read_config()['platform']
     for platform in platform_config:
         keyboard = TelegramInlineKeyboard()
         if platform['en_name'] in services_type_list:
             questionnaire_buttons_list = []
-            # keyboard.add_button(f"{platform['ru_name']}", f"global_{platform['en_name']}_clicked")
+            # keyboard.add_button(f"{platform['ru_name']}", f"global~{platform['en_name']}~clicked")
             for user in platform['users']:
                 questionnaire_buttons_list.append(
-                    Button(f"{user['name']}", f"user_{user['id']}_clicked")
+                    Button(f"{user['name']}", f"user~{user['id']}~clicked")
                 )
                 questionnaire_buttons_list.append(
-                    Button(f"Успешно", f"user_{user['id']}_success")
+                    Button(f"Успешно", f"user~{user['id']}~success")
                 )
                 questionnaire_buttons_list.append(
-                    Button(f"Ошибки", f"user_{user['id']}_errors")
+                    Button(f"Ошибки", f"user~{user['id']}~errors")
                 )
             keyboard.add_buttons(questionnaire_buttons_list, 3)
             keyboard.add_button(f"Сгенерировать отчет", f"report_generate")
@@ -346,14 +346,14 @@ def user_success_or_errors(call, user_id, new_state):
         button_in_row = 0
         for button in row_buttons:
             button_in_row += 1
-            action_type, button_uid, button_action = button['callback_data'].split("_")
+            action_type, button_uid, button_action = button['callback_data'].split("~")
             if user_id == button_uid:
                 if button_action == "success":
                     button['text'] = new_state
-                    button['callback_data'] = f"{action_type}_{button_uid}_checked"
+                    button['callback_data'] = f"{action_type}~{button_uid}~checked"
                 elif button_action == "errors":
                     button['text'] = "Отмена"
-                    button['callback_data'] = f"{action_type}_{button_uid}_cancel"
+                    button['callback_data'] = f"{action_type}~{button_uid}~cancel"
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
             else:
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
@@ -370,14 +370,14 @@ def user_cancel_check(call, user_id):
         button_in_row = 0
         for button in row_buttons:
             button_in_row += 1
-            action_type, button_uid, button_action = button['callback_data'].split("_")
+            action_type, button_uid, button_action = button['callback_data'].split("~")
             if user_id == button_uid:
                 if button_action == "checked":
                     button['text'] = "Успешно"
-                    button['callback_data'] = f"{action_type}_{button_uid}_success"
+                    button['callback_data'] = f"{action_type}~{button_uid}~success"
                 elif button_action == "cancel":
                     button['text'] = "Ошибки"
-                    button['callback_data'] = f"{action_type}_{button_uid}_errors"
+                    button['callback_data'] = f"{action_type}~{button_uid}~errors"
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
             else:
                 new_buttons_list.append(Button(text=button['text'], callback=button['callback_data']))
@@ -461,13 +461,13 @@ def status_message(message):
     bot_monitoring(message)
     bot_logging(message)
     keyboard = TelegramInlineKeyboard()
-    keyboard.add_button("Все", "services_all")  # Кнопка выбора всех типов сервисов
+    keyboard.add_button("Все", "services~all")  # Кнопка выбора всех типов сервисов
     service_types = read_config()['platform']
     buttons_services_list = []
     for service in service_types:
-        buttons_services_list.append(Button(service['ru_name'], f"services_{service['en_name']}_false"))
+        buttons_services_list.append(Button(service['ru_name'], f"services~{service['en_name']}~false"))
     keyboard.add_buttons(buttons_services_list, 2)
-    keyboard.add_button("Готово", "services_start")
+    keyboard.add_button("Готово", "services~start")
     bot.send_message(
         message.chat.id,
         "Выберите тип сервисов:",
@@ -481,13 +481,13 @@ def status_message(message):
     bot_monitoring(message)
     bot_logging(message)
     keyboard = TelegramInlineKeyboard()
-    keyboard.add_button("Все", "users_all")  # Кнопка выбора всех типов сервисов
+    keyboard.add_button("Все", "users~all")  # Кнопка выбора всех типов сервисов
     service_types = read_config()['platform']
     buttons_services_list = []
     for service in service_types:
-        buttons_services_list.append(Button(service['ru_name'], f"users_{service['en_name']}_false"))
+        buttons_services_list.append(Button(service['ru_name'], f"users~{service['en_name']}~false"))
     keyboard.add_buttons(buttons_services_list, 2)
-    keyboard.add_button("Готово", "users_start")
+    keyboard.add_button("Готово", "users~start")
     bot.send_message(
         message.chat.id,
         "Выберите тип сервисов:",
@@ -504,7 +504,7 @@ def query_handler(call):
     :param call:
     :return:
     """
-    if call.data != "services_start" and call.data != "services_all":
+    if call.data != "services~start" and call.data != "services~all":
         changed_text, changed_markup = services_change_state(call, "services")
         bot.answer_callback_query(callback_query_id=call.id, text="Готово")
         bot.edit_message_text(
@@ -513,7 +513,7 @@ def query_handler(call):
             message_id=call.message.id,
             reply_markup=changed_markup
         )
-    elif call.data == "services_all":
+    elif call.data == "services~all":
         changed_text, changed_markup = services_all_chosen(call, "services")
         bot.edit_message_text(
             text=changed_text,
@@ -521,7 +521,7 @@ def query_handler(call):
             message_id=call.message.id,
             reply_markup=changed_markup
         )
-    elif call.data == "services_start":
+    elif call.data == "services~start":
         changed_text = "Проверка доступности сервисов"
         bot.edit_message_text(
             text=changed_text,
@@ -539,7 +539,7 @@ def query_handler(call):
     :param call:
     :return:
     """
-    _, ris_code, clicked_state = call.data.split("_")
+    _, ris_code, clicked_state = call.data.split("~")
     if clicked_state == "success":
         changed_text = call.message.text
         changed_markup = service_success_or_errors(call, ris_code, '✅')
@@ -584,7 +584,7 @@ def query_handler(call):
     :param call:
     :return:
     """
-    if call.data != "users_start" and call.data != "users_all":
+    if call.data != "users~start" and call.data != "users~all":
         changed_text, changed_markup = services_change_state(call, "users")
         bot.answer_callback_query(callback_query_id=call.id, text="Готово")
         bot.edit_message_text(
@@ -593,7 +593,7 @@ def query_handler(call):
             message_id=call.message.id,
             reply_markup=changed_markup
         )
-    elif call.data == "users_all":
+    elif call.data == "users~all":
         changed_text, changed_markup = services_all_chosen(call, "users")
         bot.answer_callback_query(callback_query_id=call.id, text="Выбраны все типы сервисов")
         bot.edit_message_text(
@@ -602,7 +602,7 @@ def query_handler(call):
             message_id=call.message.id,
             reply_markup=changed_markup
         )
-    elif call.data == "users_start":
+    elif call.data == "users~start":
         changed_text = "Опрос сотрудников"
         bot.edit_message_text(
             text=changed_text,
@@ -620,7 +620,7 @@ def query_handler(call):
     :param call:
     :return:
     """
-    _, user_id, clicked_state = call.data.split("_")
+    _, user_id, clicked_state = call.data.split("~")
     if clicked_state == "success":
         changed_text = "Опрос сотрудников"
         changed_markup = user_success_or_errors(call, user_id, '✅')
