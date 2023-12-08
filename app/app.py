@@ -43,7 +43,7 @@ if devmode:
     logging.basicConfig(filename="C:\\Users\\amalinko\\PycharmProjects\\QuestionnaireBot\\logs\\questionnaire_bot.log",
                         level=logging.INFO)
 elif macmode:
-    logging.basicConfig(filename="../../QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
+    logging.basicConfig(filename="../QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 else:
     logging.basicConfig(filename="/QuestionnaireBot/logs/questionnaire_bot.log", level=logging.INFO)
 using_bot_counter = prometheus_client.Counter(
@@ -56,7 +56,7 @@ parser = ConfigParser()
 if devmode:
     parser.read(Path('C:\\Users\\amalinko\\PycharmProjects\\QuestionnaireBot\\config\\init.ini').absolute())
 elif macmode:
-    parser.read(Path('../../QuestionnaireBot/config/init.ini').absolute())
+    parser.read(Path('../QuestionnaireBot/config/init.ini').absolute())
 else:
     parser.read(Path('/QuestionnaireBot/config/init.ini').absolute())
 telegram_api_token = parser['telegram']['telegram_api_token']
@@ -65,7 +65,7 @@ bot = telebot.TeleBot(token=telegram_api_token)
 if devmode:
     path: Path = Path(f"C:\\Users\\amalinko\\PycharmProjects\\QuestionnaireBot\\config\\config.yaml").absolute()
 elif macmode:
-    path: Path = Path(f"../../QuestionnaireBot/config/config.yaml").absolute()
+    path: Path = Path(f"../QuestionnaireBot/config/config.yaml").absolute()
 else:
     path: Path = Path(f"/QuestionnaireBot/config/config.yaml").absolute()
 # --------------------------------
@@ -422,112 +422,6 @@ def get_os_usernames():
             for user in platform['users']:
                 users.append(user['telegram_username'])
     return users
-
-
-# @bot.message_handler(commands=['who_is_in_the_conference'])
-# def initial_message(message):
-#     bot.send_message(
-#         message.chat.id,
-#         "Введите адрес конференции",
-#     )
-#     bot.register_next_step_handler(message, check_dion_room)
-#
-#
-# def check_dion_room(message):
-#     if is_dev:
-#         browser = webdriver.Chrome('/Users/aleksandrmalinko/Chromedriver/chromedriver_mac_arm64/chromedriver', options=chrome_options)
-#     else:
-#         browser = webdriver.Chrome(options=chrome_options)
-#     browser.implicitly_wait(10)
-#     browser.get(f'https://dion.vc/event/{message.text}')
-#     tries = 3
-#     while tries > 0:
-#         try:
-#             elem = browser.find_element_by_xpath("/html/body").text
-#             break
-#         except:
-#             print("name не найден")
-#             tries -= 1
-#             time.sleep(1)
-#     print(elem)
-#     for i in range(1, 5):
-#         try:
-#             browser.get(f'https://dion.vc/event/{message.text}')
-#             break
-#         except:
-#             print(f"{i} try")
-#     while True:
-#         try:
-#             elem = browser.find_element(By.ID, 'name')
-#             break
-#         except:
-#             print("name не найден")
-#             time.sleep(1)
-#     elem.send_keys('OSCheckBot' + Keys.RETURN)
-#     while True:
-#         try:
-#             connect_btn = browser.find_element(By.CSS_SELECTOR, "#connect-to-call")
-#             break
-#         except:
-#             time.sleep(1)
-#     connect_btn.click()
-#     while True:
-#         try:
-#             users_btn = browser.find_element(By.CSS_SELECTOR, "#open-speakers-list-button")
-#
-#             break
-#         except:
-#             time.sleep(1)
-#     users_btn.click()
-#     user_list = browser.find_elements(By.CSS_SELECTOR,
-#                                      "root > div.sc-iqcoie.jzLhJm > div > div.css-m7mn9r > div > div > div.MuiDrawer-root.MuiDrawer-docked.css-uje53d > div > div.css-19tbzjb > div > div > ul"
-#                                      )
-#     # user_list = user_list.find_elements(By.XPATH, "./li")
-#     dion_users = []
-#     for user in user_list:
-#         name = user.find_elements(By.XPATH, "./div[2]/div[1]/div")
-#         try:
-#             # firstname, second_name = name[0].text.split(" ", 2)
-#             firstname = name[0].text.split(' ')[0].replace('ё', 'е')
-#             second_name = name[0].text.split(' ')[1].replace('ё', 'е')
-#             dion_users.append({'first_name': firstname, 'second_name': second_name})
-#         except:
-#             dion_users.append({'first_name': name[0].text, 'second_name': ""})
-#
-#     platform_config = read_config()['platform']
-#     full_config_users = []
-#     for platform in platform_config:
-#         if platform['en_name'] == "OS":
-#             full_config_users = platform['users']
-#             break
-#     else:
-#         print("Конфигурационный файл не обнаружен")
-#         exit(-1)
-#     config_users = []
-#     for user in full_config_users:
-#         fullname = user['name'].replace('ё', 'е')
-#         try:
-#             firstname, second_name = fullname.split(" ")
-#             config_users.append(
-#                 {'first_name': firstname, 'second_name': second_name, 'telegram_id': user['telegram_username']})
-#         except:
-#             config_users.append(
-#                 {'first_name': fullname, 'second_name': "", 'telegram_id': user['telegram_username']})
-#     admins_not_in_dion, unknown_admins = check_first_second_name(dion_names=dion_users, config_names=config_users)
-#     answer_message = f'https://dion.vc/event/{message.text}\n'
-#     answer_message += "Отсутствуют:\n"
-#     for elem in admins_not_in_dion:
-#         answer_message += f"{elem['first_name']} {elem['second_name']} {elem['telegram_id']}\n"
-#     if len(unknown_admins) != 1:
-#         answer_message += "\nНеизвестные участники:\n"
-#         for elem in unknown_admins:
-#             if elem['first_name'] != 'Oscheckbot':
-#                 answer_message += f"{elem['first_name']} {elem['second_name']}\n"
-#     browser.close()
-#     bot.send_message(
-#         message.chat.id,
-#         answer_message,
-#     )
 
 
 @bot.message_handler(commands=['os_users'])
