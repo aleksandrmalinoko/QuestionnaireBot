@@ -5,28 +5,11 @@ from configparser import ConfigParser
 import yaml
 import prometheus_client
 import logging
-import time
 from keyboards import TelegramInlineKeyboard, Button
-from selenium import webdriver
 import argparse
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+
 
 is_dev = 0
-chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument('--no-sandbox')
-# chrome_options.add_argument('--headless')
-chrome_options.add_argument('--window-size=1920,1080')
-chrome_options.add_argument('--use-fake-ui-for-media-stream')
-chrome_options.add_argument('--use-fake-device-for-media-stream')
-chrome_options.add_argument('--disable-notification')
-if not is_dev:
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--disable-extensions')
 
 # --------------------------------
 parser = argparse.ArgumentParser(description="You can run this script locally, using flag --devmode or -d",
@@ -89,23 +72,6 @@ def bot_logging(message):
         f" {message.from_user.id},"
         f" {message.from_user.full_name}"
     )
-
-
-def check_first_second_name(dion_names, config_names):
-    admins_not_in_dion = []
-    for config_admin in config_names:
-        for dion_admin in dion_names:
-            if config_admin['first_name'] == dion_admin['first_name']:
-                if config_admin['second_name'] == dion_admin['second_name']:
-                    dion_names.remove(dion_admin)
-                    break
-            elif config_admin['first_name'] == dion_admin['second_name']:
-                if config_admin['second_name'] == dion_admin['first_name']:
-                    dion_names.remove(dion_admin)
-                    break
-        else:
-            admins_not_in_dion.append(config_admin)
-    return admins_not_in_dion, dion_names
 
 
 # Функция для генерации отчета из опроса

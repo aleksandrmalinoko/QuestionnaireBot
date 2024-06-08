@@ -1,7 +1,7 @@
 pyTelegramBotAPI~=4.2.2
 PyYAML~=6.0
 prometheus-client~=0.14.1
-requests~=2.27.1
+requests
 urllib3~=1.26.8
 beautifulsoup4==4.10.0
 pytest==6.2.5

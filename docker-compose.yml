@@ -4,7 +4,7 @@ services:
     build: .
     volumes:
       - type: bind
-        source: /home/ubuntu/bots_config/questionnaire_bot/config
+        source: /home/in-aas-alvma/bots_config/questionnaire_bot/config
 #        source: /Users/amalinko/PythonProjects/QuestionnaireBot/config
         target: /QuestionnaireBot/config
       - type: bind
